@@ -138,7 +138,7 @@ class TransactionController extends Controller
         }
         // ვალუტის აიდის განსაზღვრა არსებობის შემთხვევაში
         if ($currency_id ) {
-            $data['currency_code'] = $currency_code;
+            $data['currency_id'] = $currency_id;
         }
         // ტრანზაქციის ბაზაში შენახვა
         if (self::createTransaction($data)) {

@@ -20,6 +20,7 @@ class CreateTransactions extends Migration
             $table->unsignedBigInteger('sender_wallet_id')->nullable();
             $table->unsignedBigInteger('receiver_wallet_id')->nullable();
             $table->unsignedBigInteger('currency_id')->nullable();
+            $table->bigInteger('value');
             $table->tinyText('currency_code')->nullable();
             $table->tinyInteger('type_id')->comment('1 - diff users transactions. 2 - exchange');
             $table->tinyInteger('status_id')->default(1)->comment('0- deleted, pending -1, reject-2, confirmed - 3');
