@@ -21,13 +21,13 @@ class TransactionController extends Controller
         $SenderWallet = Wallet::getWalletWithCurrency(['user_id' => Auth::id(), 'wallet_id' => $data['sender_wallet_id']]);
         // შემოწმება არის თუ არა საფულე
         if (count($SenderWallet) === 0){
-            return response()->json(['status' => 0, 'error' => 'not found']);
+            return response()->json(['status' => 0, 'error' => 'გამგზავნის საფულე ვერ მოინახა' . self::FailedTransaction($data)]);
         }
         // მიმღების საფულის არჩევა
         $ReceiverWallet = Wallet::getWalletWithCurrency(['user_id' => Auth::id(), 'wallet_id' => $data['receiver_wallet_id']]);
         // შემომწმება არის თუ არა მიმღების საფულე
         if (count($ReceiverWallet) === 0){
-            return response()->json(['status' => 0, 'error' => 'ანგარიში არ არსებობს']);
+            return response()->json(['status' => 0, 'error' => 'ანგარიში არ არსებობს'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
         }
         // ტრანზაქციის გაკეთბა
         return self::makeTransaction($data,$ReceiverWallet,$SenderWallet,0);
@@ -41,18 +41,18 @@ class TransactionController extends Controller
         $SenderWallet = Wallet::getWalletWithCurrency(['user_id' => Auth::id(), 'wallet_id' => $data['sender_wallet_id']]);
         // შემოწმება არის თუ არა საფულე
         if (count($SenderWallet) === 0){
-            return response()->json(['status' => 0, 'error' => 'not found']);
+            return response()->json(['status' => 0, 'error' => 'გამგზავნის საფულე ვერ მოინახა' . self::FailedTransaction($data)]);
         }
 
         // მიმღების საფულის არჩევა
         $ReceiverWallet = Wallet::getWalletWithCurrency(['user_id' => $data['receiver_id'], 'wallet_id' => $data['receiver_wallet_id']]);
         // შემომწმება არის თუ არა მიმღების საფულე
         if (count($ReceiverWallet) === 0){
-            return response()->json(['status' => 0, 'error' => 'ანგარიში არ არსებობს']);
+            return response()->json(['status' => 0, 'error' => 'ანგარიში არ არსებობს'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
         }
         // შემოწმება ორივე საფულის ვალუტა თუ ემთხვვა ერთმანეთს
         if($SenderWallet[0]->currency_code !== $ReceiverWallet[0]->currency_code) {
-            return response()->json(['status' => 0, 'error' => 'ვალუტა არ ემთხვევა']);
+            return response()->json(['status' => 0, 'error' => 'ვალუტა არ ემთხვევა'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
         }
 
         // ტრანზაქციის გაკეთბა
@@ -104,11 +104,11 @@ class TransactionController extends Controller
             $newReceiverBalance = $ReceiverWallet[0]->balance + ($data['value']/($exchangeRate[0]->buy/100));
             //ბალანსის განახლება გამგზავნისთვის
             if(!self::updateWallet($SenderWallet[0]->wallet_id,['balance' => $newSenderBalance])) {
-                return response()->json(['status' => 0, 'error' => 'ბლანსი ვერ განახლდა']);
+                return response()->json(['status' => 0, 'error' => 'ბლანსი ვერ განახლდა'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
             }
             //ბალანსის განახლება მიმღებისთვის
             if (!self::updateWallet($ReceiverWallet[0]->wallet_id,['balance' => $newReceiverBalance])){
-                return response()->json(['status' => 0, 'error' => 'ბლანსი ვერ განახლდა']);
+                return response()->json(['status' => 0, 'error' => 'ბლანსი ვერ განახლდა'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
             }
 
             $data['currency_code'] = $SenderWallet[0]->currency_code;
@@ -116,13 +116,36 @@ class TransactionController extends Controller
             $data['updated_at'] = date('Y-m-d H:i:s');
             // ტრანზაქციის ჩაწერა
             if (!self::createTransaction($data)) {
-                return response()->json(['status' => 0, 'error' => 'ტრანაზაქცია ვერ შეინახა']);
+                return response()->json(['status' => 0, 'error' => 'ტრანაზაქცია ვერ შეინახა'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
             }
         } else {
-            return response()->json(['status' => 0, 'error' => 'ანგარიშზე არასაკმარისი თანხაა']);
+            return response()->json(['status' => 0, 'error' => 'ანგარიშზე არასაკმარისი თანხაა'.self::FailedTransaction($data,$SenderWallet[0]->currency_id,$SenderWallet[0]->currency_code)]);
         }
 
         return  response()->json(['status' => 1, 'data' => 'success']);
+    }
+    // წარუმატებელი ტრანზაქციის აღწერა
+    private static function FailedTransaction($data = null,$currency_id = null,$currency_code = null) :string
+    {
+        //თარიღი
+        $data['created_at'] = date('Y-m-d H:i:s');
+        $data['updated_at'] = date('Y-m-d H:i:s');
+        // უარყოფილობის სტატუსი
+        $data['status_id'] = 2;
+        // ვალუტის კოდის განსაზღვრა არსებობის შემთხვევაში
+        if ($currency_code) {
+            $data['currency_code'] = $currency_code;
+        }
+        // ვალუტის აიდის განსაზღვრა არსებობის შემთხვევაში
+        if ($currency_id ) {
+            $data['currency_code'] = $currency_code;
+        }
+        // ტრანზაქციის ბაზაში შენახვა
+        if (self::createTransaction($data)) {
+            return 'ტრანზაქცია უარყოფილია';
+        }
+        return 'დაფიქსირდა მოულოდნელი შეცდომა';
+
     }
 
     //ვალუტის კურსის მიღბა

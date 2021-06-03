@@ -18,7 +18,7 @@ class CreateWallet extends Migration
             $table->text('name');
             $table->tinyText('currency_code');
             $table->unsignedBigInteger('user_id')->index();
-            $table->bigInteger('balance ')->default(0);
+            $table->bigInteger('balance')->default(0);
             $table->unsignedBigInteger('currency_id');
             $table->tinyInteger('status_id')->default(1)->comment('0-deleted, 1 - active,2-passive ');
             $table->timestamps();

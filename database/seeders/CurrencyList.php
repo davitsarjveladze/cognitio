@@ -21,8 +21,8 @@ class CurrencyList extends Seeder
                 'currency_code' => 'USD'
             ],
             [
-                'country' => 'GEORGIA',
-                'currency_code' => 'GEL'
+                'country' => 'EUROPEAN UNION',
+                'currency_code' => 'EUR'
             ],
         ];
         DB::table('currency_list')->insert($basicCurrencyArray);
@@ -36,6 +36,7 @@ class CurrencyList extends Seeder
                         'to_currency' => $SubBasic['currency_code'],
                         'buy' => 0,
                         'sell' => 0,
+                        'created_at' => data('Y-m-d H:i:s'),
                     ];
             }
         }
