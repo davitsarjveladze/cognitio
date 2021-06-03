@@ -21,7 +21,7 @@ class CreateTransactions extends Migration
             $table->unsignedBigInteger('receiver_wallet_id');
             $table->unsignedBigInteger('currency_id');
             $table->tinyInteger('type_id')->comment('1 - diff users transactions. 2 - exchange');
-            $table->tinyInteger('status_id')->comment('0- deleted, pending -1, reject-2, confirmed - 3');
+            $table->tinyInteger('status_id')->default(1)->comment('0- deleted, pending -1, reject-2, confirmed - 3');
             $table->timestamps();
 
             $table->foreign('sender_id')->references('id')->on('users');

@@ -21,6 +21,7 @@ class WalletController extends Controller
         $data = Validator::make($request->all(), [
             'name' => 'required|string',
             'currency_id' => 'required|Integer',
+            'currency_code' => 'required'
         ])->validate();
 
         $data['user_id'] = Auth::id();
